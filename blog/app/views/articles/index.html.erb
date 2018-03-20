@@ -1,0 +1,30 @@
+<h1>
+  Listing all articles
+</h1>
+
+<!-- Link to articles/new -->
+<!-- new_article_path = new/article -->
+<p>
+  <%= link_to "Create new article", new_article_path %>  
+</p>
+
+<div align="center">
+
+<%= will_paginate %>
+
+</div>
+
+
+<%= render 'article', obj: @articles %>
+
+
+<div align="center">
+
+<%= will_paginate %>
+
+</div>
+
+
+
+
+
