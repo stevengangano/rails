@@ -288,21 +288,88 @@ Using BCrypt to implement encryption
 
   Type: salt = BCrypt::Engine.generate_salt
 
-Routing
+10) Push to master branch
 
-routes.rb:
 
-get 'query/:else/:another_one', to 'pages#something'
+Overriding current_user in welcome/index.html.erb:
 
-controller.rb
+1) Go to application_controller.rb
 
-#needs to be match routes
-def something
-  @else = params[:else]
-  @another = params[:another_one]
-end
+  Type:
+  #if there is current_user logged leave as is (super)
+  #if not, show Guest User
+  def current_user
+    super || OpenStruct.new(name: "Guest User", first_name: "Guest",
+    last_name: "User", email: "guest@yahoo.com")
+  end
 
-something.html.erb:
+2) Go to welcome/index.html.erb:
 
-<h1> <%= @else %> <h1>
-<h1> <%= @else %> <h1>
+  <h1> Hi, <%= current_user.first_name %> welcome to the page </h1> <br> => Remove if current_user
+
+  <% if current_user.is_a?(User) %> => Add this
+    <%= link_to "Logout", destroy_user_session_path, method: :delete %>
+  <% else %>
+    <%= link_to "Register", new_user_registration_path %> <br>
+    <%= link_to "Login", new_user_session_path %>
+  <% end %>
+
+
+  Note:
+  Remove "if current_user"
+  Check if current_user is a class of "User" if so show login link, if not
+  it is a class of "OpenStruct" show login/register links
+
+
+3) Build a Concern for current_user method
+
+   Create a controllers/concerns/current_user_concern.rb:
+
+   def current_user
+     super || guest_user
+   end
+
+   def guest_user
+     OpenStruct.new(name: "Guest User",
+                    first_name: "Guest",
+                    last_name: "User",
+                    email: "guest@yahoo.com")
+   end
+
+4) Go application_controller.rb:
+
+  class ApplicationController < ActionController::Base
+    # Prevent CSRF attacks by raising an exception.
+    # For APIs, you may want to use :null_session instead.
+    protect_from_forgery with: :exception
+    include DeviseWhitelist
+    include CurrentUserConcern => Add this]
+
+  end
+
+
+Controllers
+
+application_controller.rb => Parent controller to every controller
+
+Custom
+
+Inspecting variable:
+
+<%= params.inspect %>
+<%= Portfolio.find(params[:id]).inspect %>
+<%= Portfolio.find(params[:id]).title %>
+
+Sessions => Taking data from one page to another
+
+1) Go to application_controller.rb:
+
+    before_action :set_source
+
+    def set_source
+      session[:source] = params[:q] if params [:q]
+    end
+
+3) go to show.html.erb
+
+  <%= session.inspect %>
