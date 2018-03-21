@@ -336,18 +336,72 @@ Data Relationships
 
 1) Create a relationship between Topic and Portfolio tables
 
-Portfolio:
-World Series topic_id: 1
-Superbowl topic_id: 2
-Spring Training topic_id: 1
+  For example:
 
-Topics:
-1 baseball
-2 football
+  Portfolio:
+  World Series topic_id: 1
+  Superbowl topic_id: 2
+  Spring Training topic_id: 1
 
-For example:
+  Topics:
+  1 baseball
+  2 football
+
 2) Type: rails g model Topic title:string
 3) rake db:migration
 4) In models/topic.rb
 
-  Type: validates_presence_of :title, :percent_utilized, :main_image
+  Type: validates_presence_of :title
+
+5) Create a migration file:
+
+  Type: rails g migration add_topic_reference_to_portfolio topic:references
+
+  Go to migration file and check if:
+
+  :portfolio, :topic, foreign_key: true
+
+6) If so, rake db:migrate. Should add topic_id to "portfolio table"
+
+7) Go to models/portfolio.rb
+
+  Type: belongs_to :topic
+
+8) Go to models/topic.rb:
+
+  Type: has_many :portfolios
+
+9) Create a few Topics
+
+   In console, type:
+
+   Topic.create!(title: "Ruby Programming")
+   Topic.create!(title: "Software Engineering")
+
+10) Create a portfolio with a topic id:
+
+    Portfolio.create!(title: "Spring Training", percent_utilized: 50, main_image: "http://placehold.it/350x100", topic_id: Topic.first.id)
+
+
+
+
+Custom Scopes
+
+
+
+
+Setting defaults => For example: if no main image is typed into the form
+
+Go to models/portfolio.rb:
+
+after_initialize :set_defaults
+
+def set_defaults
+ self.main_image ||= "https://plcehold.it/600x400"
+end
+
+OR
+
+if self.main_image == nil
+  self.main_image = "https://plcehold.it/600x400"
+end

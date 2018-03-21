@@ -9,7 +9,10 @@ class User < ActiveRecord::Base
 
   def first_name
     #Takes the first and last name, splits the them, and then grabs 1st element
-    #in the array. For example "John Doe".split.name.first = "John"
+    #in the array.
+    #For example:
+    #Go to rails conole => type User.all => User.last => user = User.last =>
+    # => user.first_name => "John"
     self.name.split.first
   end
 
