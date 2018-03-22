@@ -93,3 +93,25 @@ footer ul li {
   float: left;
   margin-left: 15px;
 }
+
+// Footer always at the bottom code
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+.footer {
+  text-align: center;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 3rem;
+  text-align: center;
+}
