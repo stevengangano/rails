@@ -558,3 +558,5 @@ Fixing conflict bug (when a user signs up the first time there is an error)
   Remove "//= require turbolinks"
 
 2) Remove gem "turbolinks" => Run bundle install
+
+****ADD CONFIRMABLE FOR PRODUCTION****
