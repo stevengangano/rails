@@ -168,14 +168,6 @@ config.action_mailer.default_url_options = { :host => 'yourherokuappname.herokua
 
 Test it out in development by signing up a user and then grabbing the confirmation link from the web output in your terminal and copying/pasting the link in your browser
 
-NOTE for development:
-
-comment config/environments/development.rb, production.rb
-comment config/enviornment.rb
-comment model/user.rb => add :confirmable (ONLY FOR PRODUCTION)
-
-
-
 Update Layout and Test in Production
 
 1) Go to application.html.erb file under app/views/layouts folder and remove the
@@ -290,12 +282,11 @@ Test key: sk_test_ZohGsPILiMHTYxozopAuwup2
 
   Type: (FOR DEVELOPMENT):
 
+  Go to config/initializers/stripe.rb:
+
   Rails.configuration.stripe = {
-
-
-  :publishable_key => Rails.application.secrets.stripe_publishable_key,
-  :secret_key => Rails.application.secrets.stripe_secret_key
-
+    :publishable_key => Rails.application.secrets.stripe_publishable_key,
+    :secret_key => Rails.application.secrets.stripe_secret_key
   }
 
   Stripe.api_key = Rails.application.secrets.stripe_secret_key
@@ -315,23 +306,19 @@ Test key: sk_test_ZohGsPILiMHTYxozopAuwup2
     stripe_publishable_key: ENV['stripe_publishable_key']
     stripe_secret_key: ENV['stripe_publishable_key']
 
-
     OR
 
     Type (FOR PRODUCTION):
 
     Rails.configuration.stripe = {
-
-    :publishable_key => ENV['STRIPE_TEST_PUBLISHABLE_KEY'],
-
-    :secret_key => ENV['STRIPE_TEST_SECRET_KEY']
-
+      :publishable_key => ENV['STRIPE_TEST_PUBLISHABLE_KEY'],
+      :secret_key => ENV['STRIPE_TEST_SECRET_KEY']
     }
 
     Stripe.api_key = Rails.configuration.stripe[:secret_key]
 
 
-Open your .zshrc file and type: (https://superuser.com/questions/886132/where-is-the-zshrc-file-on-mac)
+Create .zshrc file and type:
 
 export STRIPE_TEST_SECRET_KEY=yoursecrettestkeyfromstripe
 export STRIPE_TEST_PUBLISHABLE_KEY=yourpublishabletestkeyfromstripe
@@ -576,10 +563,11 @@ Uploading image:
 1) Add the following gems to your gemfile:
 
 gem 'carrierwave'
+gem 'carrierwave-aws', '~> 1.0', '>= 1.0.2'
 gem 'mini_magick'
-gem 'fog'
+gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
-2) Generage Image resources:
+2) Generating Image resources:
 
 
    Type: rails generate scaffold Image name:string picture:string user:references
@@ -651,12 +639,43 @@ gem 'fog'
 
    create  app/uploaders/picture_uploader.rb
 
+
+ 3) Go to uploaders/picture_uploader.rb
+
+ class PictureUploader < CarrierWave::Uploader::Base
+   include CarrierWave::MiniMagick
+   process resize_to_limit: [300, 300]
+
+   storage :file
+
+   def store_dir
+     "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+   end
+
+   def extension_whitelist
+     %w(jpg jpeg gif png)
+   end
+
+ end
+
 7) Go to models/image.rb file:
 
-   #":picture" is from schema.rb
-   #"PictureUploader" is the class from create  app/uploaders/picture_uploader.rb
-   #needed to associate the two
-   mount_uploader :picture, PictureUploader
+    class Image < ActiveRecord::Base
+      belongs_to :user
+      #":picture" is from schema.rb. Needed to upload file. mount_uploader is from carrier-wave
+      #"PictureUploader" is from uploaders/uploader.rb
+      mount_uploader :picture, PictureUploader
+      validate :picture_size
+      validates_presence_of :picture
+
+      private
+      def picture_size
+        if picture.size > 5.megabytes
+          errors.add(:picture, "should be less than 5MB")
+        end
+      end
+
+    end
 
 8)  Go to apps/views/images/_form.html.erb:
 
@@ -681,7 +700,87 @@ gem 'fog'
 9) Go to 'images/new' in web browser to see if form works:
 
    Note if there is an error "uninitialized constant Image::PictureUploader",
-   restart your server
+   restart your server.
+
+
+   6) Go to images_controller.rb, add ":picture" to "def image_params" method
+
+   class ImagesController < ApplicationController
+     before_action :set_image, only: [:show, :edit, :update, :destroy]
+
+     # GET /images
+     # GET /images.json
+     def index
+       @images = Image.all
+     end
+
+     # GET /images/1
+     # GET /images/1.json
+     def show
+     end
+
+     # GET /images/new
+     def new
+       @image = Image.new
+     end
+
+     # GET /images/1/edit
+     def edit
+     end
+
+     # POST /images
+     # POST /images.json
+     def create
+       @image = Image.new(image_params)
+       @image.user = current_user
+
+       respond_to do |format|
+         if @image.save
+           format.html { redirect_to @image, notice: 'Image was successfully created.' }
+           format.json { render :show, status: :created, location: @image }
+         else
+           format.html { render :new }
+           format.json { render json: @image.errors, status: :unprocessable_entity }
+         end
+       end
+     end
+
+     # PATCH/PUT /images/1
+     # PATCH/PUT /images/1.json
+     def update
+       respond_to do |format|
+         if @image.update(image_params)
+           format.html { redirect_to @image, notice: 'Image was successfully updated.' }
+           format.json { render :show, status: :ok, location: @image }
+         else
+           format.html { render :edit }
+           format.json { render json: @image.errors, status: :unprocessable_entity }
+         end
+       end
+     end
+
+     # DELETE /images/1
+     # DELETE /images/1.json
+     def destroy
+       @image.destroy
+       respond_to do |format|
+         format.html { redirect_to images_url, notice: 'Image was successfully destroyed.' }
+         format.json { head :no_content }
+       end
+     end
+
+     private
+       # Use callbacks to share common setup or constraints between actions.
+       def set_image
+         @image = Image.find(params[:id])
+       end
+
+       # Never trust parameters from the scary internet, only allow the white list through.
+       def image_params
+         params.require(:image).permit(:name, :picture, :user_id)
+       end
+   end
+
 
 10) Showing user ID on views/images/show.html.erb:
 
@@ -693,7 +792,7 @@ gem 'fog'
 
     Type: @images.user_id => Grabs user ID (ex: 1), @images.inspect shows current_user info
 
-12) Displaying image instead of a string to images/show.html.erb:
+11) Displaying image instead of a string to images/show.html.erb:
 
   <%- model_class = Image -%>
   <div class="page-header">
@@ -712,12 +811,12 @@ gem 'fog'
     <dd><%= @image.user_id %></dd>
   </dl>
 
-13) Remove links from form images/index.html.erb:
+12) Remove links from form images/index.html.erb:
 
     Only show the "name" "picture" and "actions" column
 
 
-14) Show images in images/index.html.erb:
+13) Show images in images/index.html.erb:
 
   <% @images.each do |image| %>
   <tr>
@@ -728,7 +827,7 @@ gem 'fog'
 
 Validating Images
 
-13) White list for images jpg, jpeg, gif, png, go to uploadders/picture_uploader.rb:
+14) White list for images jpg, jpeg, gif, png, go to uploadders/picture_uploader.rb:
 
     Uncomment:
 
@@ -738,7 +837,7 @@ Validating Images
       %w(jpg jpeg gif png)
     end
 
-14) Go to models/image.rb: => If image is greater than 5MB, show error.
+15) Go to models/image.rb: => If image is greater than 5MB, show error.
 
     class Image < ActiveRecord::Base
       belongs_to :user
@@ -754,7 +853,7 @@ Validating Images
 
     end
 
-15) Create error message grom app/view/images/_form.html.erb:
+16) Create error message grom app/view/images/_form.html.erb:
 
     <script type="text/javascript">
       $('#image_picture').bind('change', function() {
@@ -766,7 +865,7 @@ Validating Images
     <script>
 
 
-16) Open your picture_uploader.rb file within the app/uploaders folder and add the following two lines right below the class definition:
+17) Open your picture_uploader.rb file within the app/uploaders folder and add the following two lines right below the class definition:
 
     Note: Will only display if <= 300x300
 
@@ -774,48 +873,154 @@ Validating Images
       include CarrierWave::MiniMagick
       process resize_to_limit: [300, 300]
 
+18) When an image is uploaded, it goes to:
+
+  public/uploads/image/picture
+
+  Note: This is from uploaders/uploader.rb:
+
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+
 Uploading images for production:
 
-1) In your picture_uploader.rb file under app/uploaders folder, replace the line that says storage :file with the following:
+1) Create an AWS account (steven@therubythree.com)
+2) Create a .env file in the root folder of photo-app and type:
 
-  if Rails.env.production?
-    #STORE :FOG IS USED FOR PRODUCTION
-    storage :fog
-    else
-      #STORE :FOG IS USED FOR DEVELOPMENT
-    storage :file
-  end
+    S3_BUCKET_NAME=
+    AWS_ACCESS_KEY_ID=
+    AWS_SECRET_ACCESS_KEY=
+    AWS_REGION=
 
-3) Set your credentials for amazon IAM user and S3 bucket with heroku:
+3) Go to ".gitignore" file in root path and type:
 
-heroku config:set S3_ACCESS_KEY=youraccesskeyforIAMuser
-heroku config:set S3_SECRET_KEY=yoursecretykeyforIAMuser
-heroku config:set S3_BUCKET=yours3bucketname
+    # I don't want to show my secrets.yml and .env
+    /config/secrets.yml
+    .env
+    .zshrc
+    .profile
 
-heroku config:set S3_ACCESS_KEY=AKIAJLD7Z4XIDRIUKNWA
-heroku config:set S3_SECRET_KEY=AKIAJLD7Z4XIDRIUKNWA
-heroku config:set S3_BUCKET=stebz-photo-app
+4) Create a bucket name on AWS by going to S3
+5) Click on bucket name and go to properties
+6) At the top, look for region in the URL:
 
-4) Create file under initalizers/carrier_wave.rb:
+  region=us-east-1
 
-  if Rails.env.production?
+7) Grab Access key ID and secret access key from AWS and put into .env file:
+
+    Go to name at the top > My security credentials
+
+
+8) Fill in the information in .env file:
+
+    S3_BUCKET_NAME=stebz-photo-app
+    AWS_ACCESS_KEY_ID=AKIAJ46D5PG7JFXAAJYQ
+    AWS_SECRET_ACCESS_KEY=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
+    AWS_REGION=us-east-1
+
+9) Go to config/application.rb and type:
+
+   require "dotenv-rails" => So you can access S3 BUCKET IN CONSOLE
+
+10) Go to rails console and type:
+
+   ENV.fetch('AWS_ACCESS_KEY_ID') => shows ""
+   ENV.fetch('AWS_SECRET_ACCESS_KEY') => shows ""
+   ENV.fetch('AWS_REGION') => shows "us-east-1"
+
+11) Set your credentials for AWS with heroku:
+
+    heroku config:set S3_BUCKET_NAME=stebz-photo-app
+    heroku config:set AWS_ACCESS_KEY_ID=AKIAJ46D5PG7JFXAAJYQ
+    heroku config:set AWS_SECRET_ACCESS_KEY=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
+    heroku config:set AWS_REGION=us-east-1
+
+12) Go to https://github.com/sorentwo/carrierwave-aws and copy:
+
     CarrierWave.configure do |config|
-    config.fog_credentials = {
-    :provider => 'AWS',
-    :aws_access_key_id => ENV['S3_ACCESS_KEY'],
-    :aws_secret_access_key => ENV['S3_SECRET_KEY']
-  }
-      config.fog_directory = ENV['S3_BUCKET']
+      config.storage    = :aws
+      config.aws_bucket = ENV.fetch('S3_BUCKET_NAME')
+      config.aws_acl    = 'public-read'
+
+      # Optionally define an asset host for configurations that are fronted by a
+      # content host, such as CloudFront.
+      config.asset_host = 'http://example.com'
+
+      # The maximum period for authenticated_urls is only 7 days.
+      config.aws_authenticated_url_expiration = 60 * 60 * 24 * 7
+
+      # Set custom options such as cache control to leverage browser caching
+      config.aws_attributes = {
+        expires: 1.week.from_now.httpdate,
+        cache_control: 'max-age=604800'
+      }
+
+      config.aws_credentials = {
+        access_key_id:     ENV.fetch('AWS_ACCESS_KEY_ID'),
+        secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY'),
+        region:            ENV.fetch('AWS_REGION') # Required
+      }
+
+      # Optional: Signing of download urls, e.g. for serving private content through
+      # CloudFront. Be sure you have the `cloudfront-signer` gem installed and
+      # configured:
+      # config.aws_signer = -> (unsigned_url, options) do
+      #   Aws::CF::Signer.sign_url(unsigned_url, options)
+      # end
     end
 
-  end
+13) Create a file called config/initalizers/carrierwave.rb and paste:
 
-5) Git add for github and heroku
+    Note: Remove config.asset.host, and comments at the bottom like so:
 
+    CarrierWave.configure do |config|
+      config.storage    = :aws
+      config.aws_bucket = ENV.fetch('S3_BUCKET_NAME')
+      config.aws_acl    = 'public-read'
+
+      # The maximum period for authenticated_urls is only 7 days.
+      config.aws_authenticated_url_expiration = 60 * 60 * 24 * 7
+
+      # Set custom options such as cache control to leverage browser caching
+      config.aws_attributes = {
+        expires: 1.week.from_now.httpdate,
+        cache_control: 'max-age=604800'
+      }
+
+      config.aws_credentials = {
+        access_key_id:     ENV.fetch('AWS_ACCESS_KEY_ID'),
+        secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY'),
+        region:            ENV.fetch('AWS_REGION') # Required
+      }
+
+    end
+
+14) Go to uploads/uploader.rb:
+
+    Change from storage:file to storage :aws
+
+15) Restart rails server and upload an image:
+
+    Right click image and open in a new tab to see if it's coming
+    from s3 bucket
+
+16) Go rails console and type: Image.all
+17) Type: Image.find(id).picture
+
+18) Customize upload button in images/_form.html.erb:
+
+<div class="form-group">
+  <%= f.label :picture, :class => 'control-label col-lg-2' %>
+  <div class="col-lg-10">
+    <label class="btn btn-primary">
+      Upload an image <%= f.file_field :picture, accept: 'image/jpeg,image/gif,image/png', style: 'display: none;' %>
+    <label
+  </div>
+  <%=f.error_span(:picture) %>
+</div>
 
 
 ADDITIONAL NOTES:
-
-1) ADD :CONFIRMABLE FOR PRODUCTION in models/user.rb
-2) FOR PRODUCTION CHANGE stripe.rb AND CHANGE secrets.yml
-3) Credit card test info => 4012 8888 8888 1881
+1) FOR PRODUCTION CHANGE stripe.rb AND CHANGE secrets.yml
+2) Credit card test info => 4012 8888 8888 1881

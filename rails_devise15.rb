@@ -336,7 +336,7 @@ Overriding current_user in welcome/index.html.erb:
                     email: "guest@yahoo.com")
    end
 
-4) Go application_controller.rb:
+4) Go to application_controller.rb:
 
   class ApplicationController < ActionController::Base
     # Prevent CSRF attacks by raising an exception.

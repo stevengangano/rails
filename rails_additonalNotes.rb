@@ -453,3 +453,378 @@ Customizing PAGE TITLE
     include DefaultPageContent => Add this
 
   end
+
+Imaging
+
+1) Creating a background image in bootstrap 4.
+
+CSS:
+#background {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -100;
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%);
+  background: image-url('home_bg.png') no-repeat;
+  background-size: cover;
+}
+
+application.html.erb:
+
+<div class="site-wrapper">
+   <div class="site-wrapper-inner">
+     <div class="cover-container">
+
+       <div id="background"></div> => Add background here
+
+       <%= render "shared/application_nav" %>
+
+       <%= yield %>
+
+       <%= render "shared/application_footer" %>
+
+       <%= source_helper("application") %>
+
+     </div>
+   </div>
+ </div>
+
+ 2) Creating a video background:
+
+ <body>
+  <div class="site-wrapper">
+    <div class="site-wrapper-inner">
+      <div class="cover-container">
+
+        <%= video_tag(
+            'HardDrivePhotojpeg.mp4',
+            id: 'background',
+            autoplay: true,
+            loop: true,
+            muted: true,
+            poster: 'home_bg.png'
+          )
+          %>
+
+        <%= render "shared/application_nav" %>
+
+        <%= yield %>
+
+        <%= render "shared/application_footer" %>
+
+        <%= source_helper("application") %>
+
+      </div>
+    </div>
+  </div>
+</body>
+
+Uploading an image:
+1)
+gem 'carrierwave'
+gem 'carrierwave-aws', '~> 1.0', '>= 1.0.2'
+gem 'mini_magick'
+gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
+gem 'fog' => dont neeeded this
+
+2) Type: rails generate uploader Portfolio
+
+   creates a file called uploaders/uploader.rb
+
+3) Go to uploaders/picture_uploader.rb
+
+class PictureUploader < CarrierWave::Uploader::Base
+  include CarrierWave::MiniMagick
+  process resize_to_limit: [300, 300]
+
+  storage :file
+
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+
+  def extension_whitelist
+    %w(jpg jpeg gif png)
+  end
+
+end
+
+4) Go to models/image.rb.
+
+class Image < ActiveRecord::Base
+  belongs_to :user
+  #":picture" is from schema.rb. Needed to upload file. mount_uploader is from carrier-wave
+  #"PictureUploader" is from uploaders/uploader.rb
+  mount_uploader :picture, PictureUploader
+  validate :picture_size
+  validates_presence_of :picture
+
+  private
+  def picture_size
+    if picture.size > 5.megabytes
+      errors.add(:picture, "should be less than 5MB")
+    end
+  end
+
+end
+
+5) Customize form in images/_form.html.erb:
+
+Line 1:
+<%= form_for @image, :html => { multipart: true, :class => "form-horizontal image" } do |f| %>
+
+<div class="form-group">
+  <%= f.label :name, :class => 'control-label col-lg-2' %>
+  <div class="col-lg-10">
+    <%= f.text_field :name, :class => 'form-control' %>
+  </div>
+  <%=f.error_span(:name) %>
+</div>
+
+<div class="form-group">
+  <%= f.label :picture, :class => 'control-label col-lg-2' %>
+  <div class="col-lg-10">
+
+Line 2:
+    #ADD THIS LINE
+    <%= f.file_field :picture, accept: 'image/jpeg,image/gif,image/png' %>
+  </div>
+  <%=f.error_span(:picture) %>
+</div>
+
+6) Go to images_controller.rb, add ":picture" to "def image_params" method
+
+class ImagesController < ApplicationController
+  before_action :set_image, only: [:show, :edit, :update, :destroy]
+
+  # GET /images
+  # GET /images.json
+  def index
+    @images = Image.all
+  end
+
+  # GET /images/1
+  # GET /images/1.json
+  def show
+  end
+
+  # GET /images/new
+  def new
+    @image = Image.new
+  end
+
+  # GET /images/1/edit
+  def edit
+  end
+
+  # POST /images
+  # POST /images.json
+  def create
+    @image = Image.new(image_params)
+    @image.user = current_user
+
+    respond_to do |format|
+      if @image.save
+        format.html { redirect_to @image, notice: 'Image was successfully created.' }
+        format.json { render :show, status: :created, location: @image }
+      else
+        format.html { render :new }
+        format.json { render json: @image.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /images/1
+  # PATCH/PUT /images/1.json
+  def update
+    respond_to do |format|
+      if @image.update(image_params)
+        format.html { redirect_to @image, notice: 'Image was successfully updated.' }
+        format.json { render :show, status: :ok, location: @image }
+      else
+        format.html { render :edit }
+        format.json { render json: @image.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /images/1
+  # DELETE /images/1.json
+  def destroy
+    @image.destroy
+    respond_to do |format|
+      format.html { redirect_to images_url, notice: 'Image was successfully destroyed.' }
+      format.json { head :no_content }
+    end
+  end
+
+  private
+    # Use callbacks to share common setup or constraints between actions.
+    def set_image
+      @image = Image.find(params[:id])
+    end
+
+    # Never trust parameters from the scary internet, only allow the white list through.
+    def image_params
+      params.require(:image).permit(:name, :picture, :user_id)
+    end
+end
+
+6) Go to views/images/show.html.erb:
+
+  <dl class="dl-horizontal">
+    <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
+    <dd><%= @image.name %></dd>
+    <dt><strong><%= model_class.human_attribute_name(:picture) %>:</strong></dt>
+    #Displaying image on show page. Type @image.s
+    <dd><%= image_tag(@image.picture.url, class: 'img-thumbnail', size: "250x150") if @image.picture? %></dd>
+    <dt><strong><%= model_class.human_attribute_name(:user_id) %>:</strong></dt>
+    <dd><%= @image.user_id %></dd>
+  </dl>
+
+7) When an image is uploaded, it goes to:
+
+  public/uploads/image/picture
+
+  Note: This is from uploaders/uploader.rb:
+
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+
+Storing images on AWS:
+
+1) Create an AWS account (steven@therubythree.com)
+2) Create a .env file in the root folder of photo-app and type:
+
+    S3_BUCKET_NAME=
+    AWS_ACCESS_KEY_ID=
+    AWS_SECRET_ACCESS_KEY=
+    AWS_REGION=
+
+3) Go to ".gitignore" file in root path and type:
+
+    # I don't want to show my secrets.yml and .env
+    /config/secrets.yml
+    .env
+    .zshrc
+
+4) Create a bucket name on AWS by going to S3
+5) Click on bucket name and go to properties
+6) At the top, look for region in the URL:
+
+region=us-east-1
+
+7) Enter region and and bucket name in ".env" file
+
+    S3_BUCKET_NAME=stebz-photo-app
+    AWS_ACCESS_KEY_ID=
+    AWS_SECRET_ACCESS_KEY=
+    AWS_REGION=us-east-1
+
+8) Go to config/application.rb and type:
+
+   require "dotenv-rails" => So you can access S3 BUCKET IN CONSOLE
+
+9) Go to rails console and type:
+
+   ENV.fetch('S3_BUCKET_NAME') => shows "stebz-photo-app"
+
+10) Grab Access key ID and secret access key from AWS and put into .env file:
+
+    Go to name at the top > My security credentials
+
+11) Go to rails console and type:
+
+    ENV.fetch('AWS_ACCESS_KEY_ID') => shows ""
+    ENV.fetch('AWS_SECRET_ACCESS_KEY') => shows ""
+    ENV.fetch('AWS_REGION') => shows "us-east-1"
+
+12) Go to https://github.com/sorentwo/carrierwave-aws and copy:
+
+    CarrierWave.configure do |config|
+      config.storage    = :aws
+      config.aws_bucket = ENV.fetch('S3_BUCKET_NAME')
+      config.aws_acl    = 'public-read'
+
+      # Optionally define an asset host for configurations that are fronted by a
+      # content host, such as CloudFront.
+      config.asset_host = 'http://example.com'
+
+      # The maximum period for authenticated_urls is only 7 days.
+      config.aws_authenticated_url_expiration = 60 * 60 * 24 * 7
+
+      # Set custom options such as cache control to leverage browser caching
+      config.aws_attributes = {
+        expires: 1.week.from_now.httpdate,
+        cache_control: 'max-age=604800'
+      }
+
+      config.aws_credentials = {
+        access_key_id:     ENV.fetch('AWS_ACCESS_KEY_ID'),
+        secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY'),
+        region:            ENV.fetch('AWS_REGION') # Required
+      }
+
+      # Optional: Signing of download urls, e.g. for serving private content through
+      # CloudFront. Be sure you have the `cloudfront-signer` gem installed and
+      # configured:
+      # config.aws_signer = -> (unsigned_url, options) do
+      #   Aws::CF::Signer.sign_url(unsigned_url, options)
+      # end
+    end
+
+13) Create a file called config/initalizers/carrierwave.rb and paste:
+
+    Note: Remove config.asset.host, and comments at the bottom like so:
+
+    CarrierWave.configure do |config|
+      config.storage    = :aws
+      config.aws_bucket = ENV.fetch('S3_BUCKET_NAME')
+      config.aws_acl    = 'public-read'
+
+      # The maximum period for authenticated_urls is only 7 days.
+      config.aws_authenticated_url_expiration = 60 * 60 * 24 * 7
+
+      # Set custom options such as cache control to leverage browser caching
+      config.aws_attributes = {
+        expires: 1.week.from_now.httpdate,
+        cache_control: 'max-age=604800'
+      }
+
+      config.aws_credentials = {
+        access_key_id:     ENV.fetch('AWS_ACCESS_KEY_ID'),
+        secret_access_key: ENV.fetch('AWS_SECRET_ACCESS_KEY'),
+        region:            ENV.fetch('AWS_REGION') # Required
+      }
+
+    end
+
+14) Go to uploads/uploader.rb:
+
+    Change from storage:file to storage :aws
+
+15) Restart rails server and upload an image:
+
+    Right click image and open in a new tab to see if it's coming
+    from s3 bucket
+
+16) Go rails console and type: Image.all
+17) Type: Image.find(id).picture
+
+18) Customize upload button in images/_form.html.erb:
+
+<div class="form-group">
+  <%= f.label :picture, :class => 'control-label col-lg-2' %>
+  <div class="col-lg-10">
+    <label class="btn btn-primary">
+      Upload an image <%= f.file_field :picture, accept: 'image/jpeg,image/gif,image/png', style: 'display: none;' %>
+    <label
+  </div>
+  <%=f.error_span(:picture) %>
+</div>
