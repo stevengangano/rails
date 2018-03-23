@@ -383,11 +383,7 @@ Data Relationships
     Portfolio.create!(title: "Spring Training", percent_utilized: 50, main_image: "http://placehold.it/350x100", topic_id: Topic.first.id)
 
 
-
-
-Custom Scopes
-
-
+Custom Scopes (?)
 
 
 Setting defaults => For example: if no main image is typed into the form
@@ -405,3 +401,55 @@ OR
 if self.main_image == nil
   self.main_image = "https://plcehold.it/600x400"
 end
+
+
+Customizing PAGE TITLE
+
+1) go to views/layouts/application.html.erb
+ <title> <%= @page_title %> </title>
+
+2) Go to controller
+
+  def index
+    @article = Article.all
+    @page_title = "Home Page"
+  end
+
+  def show
+    @page_title = "Show Page"
+  end
+
+3) Go to application_controller.rb:
+
+  before_filter :set_title
+
+  def set_title
+    @page_title = "Devcamp Portfolio |  My Portfolio Website"
+  end
+
+4) Create a concern to export "set_title". Create a file called concerns/default_page_content.rb:
+
+  module DefaultPageContent => must be camelcase match file name
+    extend ActiveSupport::Concern
+
+    included do
+      before_filter :set_title
+    do
+
+    def set_title
+      @page_title = "Devcamp Portfolio |  My Portfolio Website"
+    end
+
+  end
+
+5) Go to controllers/application_controller.rb:
+
+  class ApplicationController < ActionController::Base
+    # Prevent CSRF attacks by raising an exception.
+    # For APIs, you may want to use :null_session instead.
+    protect_from_forgery with: :exception
+    include DeviseWhitelist
+    include CurrentUserConcern
+    include DefaultPageContent => Add this
+
+  end
