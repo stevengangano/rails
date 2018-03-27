@@ -43,7 +43,7 @@ Type: rails g controller Pages home about contact
 
 Note:
 1)Creates a controller with defined methods
-2)Creates views for each method
+2)Creates views for home about and contact
 3)Creates routes for each each page
 
 Data Flow (MVC = Model View Controller)
@@ -523,6 +523,135 @@ application.html.erb:
     </div>
   </div>
 </body>
+
+
+Creating a layout aside from application.html.erb:
+
+1) Create layouts/portfolio.html.erb and copy and paste from application.html.erb
+2) Go to portfolioos_controller.rb and type:
+3) #instead of application.html.erb, it uses portfolio.html.erb
+  layout "portfolio"
+4) Create a portfolios.scss
+5) To link to layouts/portfolio.html.erb, type:
+
+  <%= stylesheet_link_tag    'portfolios', media: 'all', 'data-turbolinks-track' => true %>
+
+6) Add this to config/initializers/assets.rb and restart server:
+
+ Type: Rails.application.config.assets.precompile += %w( portfolios.css )
+
+
+Using helpers:
+
+Example 1:
+
+1) Go to helpers/application_helper.rb:
+
+    module ApplicationHelper
+      def sample_helper
+        "<p> My Helper </p>".html_safe
+      end
+    end
+
+2) Go to home/index.html.erb:
+
+<%= sample_helper %>
+
+
+Example 2:
+
+1) Go to helpers/application_helper.rb:
+
+def login_helper
+   if current_user.is_a?(User)
+     link_to "Logout", destroy_user_session_path, method: :delete
+   else
+     (link_to "Register", new_user_registration_path) + "<br>".html_safe + (link_to "Login", new_user_session_path)
+   end
+end
+
+
+2) Go to home/index.html.erb:
+
+<%= login_helper %> <br>
+
+
+Note:
+
+If mostly ruby code, use helper.
+Partials usually if there is redundancy.
+
+Content Helpers:
+
+Example 1:
+
+Writing in htm.erb:
+
+<%= content_tag :h1, class: "my-special-class" do %>
+  Hi, I'm in an h1 tag
+<% end %>
+
+Example 2:
+
+1) Go to helpers/application_helper.rb:
+
+  def sample_helper
+    content_tag(:h3, "My H3 tag", class: "my-class")
+  end
+
+
+2) views/welcome/index.html.erb:
+
+   <%= sample_helper %>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Uploading an image:
 1)
