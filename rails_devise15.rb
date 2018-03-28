@@ -116,7 +116,7 @@ Customizing routes
 
   Include in welcome/index.html.erb
 
-  <%= link_to "Logout", destroy_user_sesion_path, method: :delete %>
+  <%= link_to "Logout", destroy_user_session_path, method: :delete %>
 
 4) Go to /register and create a new username.
 

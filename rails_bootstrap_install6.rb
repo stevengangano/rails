@@ -4,12 +4,12 @@ Go to balsamiq.com => 30 day trial
 
 
 1) Installing bootstrap
-  
+
   Copy:
 
   gem 'bootstrap', '~> 4.0.0' => Bootstrap 4
 
-  or 
+  or
 
   gem 'bootstrap-sass', '~> 3.3.5'
 
@@ -32,7 +32,7 @@ Go to balsamiq.com => 30 day trial
    Type:
 
    @import "bootstrap-sprockets";
-   @import "bootstrap";
+   @import "bootstrap"; => only need this and gem bootstrap 4.0
 
 6) Go to app/assets/javascripts/application.js
 
@@ -43,15 +43,3 @@ Go to balsamiq.com => 30 day trial
     //= require bootstrap-sprockets => Add this here
     //= require turbolinks
     //= require_tree .
-
-
-  
-  
-  
-
-  
-
-  
-  
-
-

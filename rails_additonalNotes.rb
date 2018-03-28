@@ -406,7 +406,9 @@ end
 Customizing PAGE TITLE
 
 1) go to views/layouts/application.html.erb
+
  <title> <%= @page_title %> </title>
+  <meta name="keywords" content="<%= @seo_keywords %>" />
 
 2) Go to controller
 
@@ -438,6 +440,7 @@ Customizing PAGE TITLE
 
     def set_title
       @page_title = "Devcamp Portfolio |  My Portfolio Website"
+      @seo_keywords = "Steven Gangano portfolio website"
     end
 
   end
@@ -534,11 +537,13 @@ Creating a layout aside from application.html.erb:
 4) Create a portfolios.scss
 5) To link to layouts/portfolio.html.erb, type:
 
-  <%= stylesheet_link_tag    'portfolios', media: 'all', 'data-turbolinks-track' => true %>
+  <%= stylesheet_link_tag    'portfolios' ....
 
 6) Add this to config/initializers/assets.rb and restart server:
 
- Type: Rails.application.config.assets.precompile += %w( portfolios.css )
+  Type:
+
+  Rails.application.config.assets.precompile += %w( portfolios.css )
 
 
 Using helpers:
@@ -555,7 +560,7 @@ Example 1:
 
 2) Go to home/index.html.erb:
 
-<%= sample_helper %>
+<%= sample_helper %
 
 
 Example 2:
@@ -573,7 +578,7 @@ end
 
 2) Go to home/index.html.erb:
 
-<%= login_helper %> <br>
+<%= login_helper % <br>
 
 
 Note:
@@ -602,32 +607,254 @@ Example 2:
 
 2) views/welcome/index.html.erb:
 
-   <%= sample_helper %>
+   <%= sample_helper %
 
 
+Turning off whitelisting parameters (alternative not recommended):
+
+   Go to config/locales/application.rb:
+
+   module Portfolio
+     class Application < Rails::Application
+       config.action_controller.permit_all_parameters = true => Type this
+     end
+   end
 
 
+   Go to controllers/portfolioos_controller.rb:
+
+   private
+   #method to add data to the database
+     def portfolio_params
+       params.require(:portfolioo) => remove '.permit(:title, :subtitle, :body)'
+     end
 
 
+    Note: This will allow title, subtitle, body to be passed in when creating new
 
 
+View helpers:
+
+Time:
+
+<%= distance_of_time_in_words(blog.created_at, Time.now)  >% ago
+
+Displays something like: 12 days ago
+
+Currency:
+
+<%= number_to_currency "150" %
+
+Phone:
+
+<%= number_to_phone "4155845318" %
+
+Percentage:
+
+<%= number_to_percentage "80.5" %
+
+Adds commas (For example: 134,434,697,934,257):
+
+<%= number_with_delimiter "134434697934257" %
 
 
+Rendering in an html.erb file:
+
+def index
+  @books = ['ROR','React', 'Java']
+end
+
+1)
+
+<% @books.each do |book| %>
+  <p><%= book %> </p>
+<%= end %>
+
+2)
+<%= @books %> => Displays whatever is sent from the controller as '@books'
+
+3)
+<% puts 'here there' %> => Shows in the console
 
 
+Spacer template:
+
+_blog_ruler.html.erb:
+<hr>
+
+index.html.erb:
+<%= render partial: @blogs, spacer_template: 'blog_ruler'
+
+Note:
+Will not put an <hr> at the top and bottom. ONLY IN BETWEEN.
 
 
+Wiring up bootstrap in application.html.erb:
+
+<%= stylesheet_link_tag "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" >%
+
+Caching:
+<% cache do %>
+  <div>
+    <% @books.each do |book| %>
+      <p><%= book %> </p>
+    <%= end %>
+  </div>
+<% end %
+
+Note:
+
+This will load faster but only want to add to areas that will not change
+
+Petergate for authorization:
+
+1) Methods needed for Petergate that come with devise:
+
+user_signed_in?
+current_user
+after_sign_in_path_for(current_user)
+authenticate_user!
+
+2) Run the generators:
+
+   Type: rails g petergate:install
+
+   insert  app/models/user.rb => Some code was inserted
+   create  db/migrate/20180327185835_add_roles_to_users.rb
+   Type: rake
+
+3) Type: rake db:migrate
+
+   Adds column "roles" to "Users" table
+
+4) Petergate can only work with regular models (ActiveRecord) so
+   Guest User needs to have its own model:
+
+   1) Create a controller called controllers/guest_user.rb:
+
+      Type:
+      #This inherts from the User model
+      class GuestUser < User
+       attr_accessor :name, :first_name, :last_name, :email
+      end
 
 
+   2) Go to controllers/application_controller.rb and type:
+
+   def current_user
+     super || guest_user
+   end
+
+   def guest_user
+     guest = GuestUser.new
+     guest.name = "Guest User"
+     guest.first_name = "Guest"
+     guest.last_name = "User"
+     guest.email = "guest@example.com"
+     guest
+   end
+
+  3) Go to application_helper.rb:
+
+  module ApplicationHelper
+
+    def sample_helper
+      content_tag(:h3, "My H3 tag application helper", class: "my-class")
+    end
+
+    def login_helper
+       #if current user is a guest user, show register and login links
+       if current_user.is_a?(GuestUser)
+        (link_to "Register", new_user_registration_path) + "<br>".html_safe + (link_to "Login", new_user_session_path)
+       else
+        link_to "Logout", destroy_user_session_path, method: :delete
+       end
+    end
+
+  end
+
+  Implementing authorization:
+
+  1) Go rails console and type User.all:
+
+    <User id: 1, email: "stevengangano@yahoo.com", name: "Steven Gangano", created_at: "2018-03-26 21:43:16", updated_at: "2018-03-27 19:31:47", roles: "user">
+
+    Note: By default, the role given is "user"
+
+  2) Go to models/user.rb and create a new "role" (site_admin):
+
+    petergate(roles: [:site_admin], multiple: false)
+
+  3) Go to portfolios_controller.rb:
+
+     At the top, type:
+
+     access all: [:show, :index], user: {except: [:destroy]}, site_admin: :all
 
 
+     Note:
+
+     Access all = All users (guest, logged in user, site admin)
+     have access to the show and index methods
+
+     user = has access to every action except destroy
+
+     site_admin = has access to all actions in the controller
+
+  4) Changing the role of "user" to "site_admin"
+
+     Type:
+
+     1) user = User.find(1)
+     2) user.update!(roles: "site_admin")
+     3) User.find(1)
+     4) Check if role was changed to "site_admin"
 
 
+  5) Giving authorization to edit and destroy links to "site_admin":
+
+    <td><%= link_to "Edit", edit_portfolioo_path(portfolio_item) if logged_in?(:site_admin) %></td>
+    <td><%= link_to "Delete", portfolioo_path(portfolio_item), method: :delete, data: { confirm: 'Are you sure?' } if logged_in?(:site_admin) %></td>
 
 
+Styling with bootstrap 4:
 
+1) gem 'bootstrap', '~> 4.0.0' => Bootstrap 4
+2) Create scss stylesheets. Add app/assets/stylesheets/custom.css.scss
 
+   Type:
+   @import "bootstrap"; => only need this and gem bootstrap 4.0
 
+Creating cover page with bootstrap 4:
+
+1) Go to layouts/portfolio.html.erb:
+
+   Type:
+
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+2) Copy and paste bootstrap 4 cover.html into welcome/index.html.erb
+
+3) Copy and paste bootstrap 4 cover.css into stylesheets/portfolio.scss
+
+Linking helpers with html.erb:
+
+application_helper.rb
+
+def login_helper
+   #if current user is a guest user, show register and login links
+   if current_user.is_a?(GuestUser)
+    (link_to "Register", new_user_registration_path, class: "nav-link") + " ".html_safe + (link_to "Login", new_user_session_path, class: "nav-link")
+   else
+    link_to "Logout", destroy_user_session_path, method: :delete, class: "nav-link"
+   end
+end
+
+welcome/index.html.erb:
+
+<a href="#" class="nav-link">Home</a>
+<%= login_helper %>
 
 
 
