@@ -112,9 +112,7 @@ Then enter in:
 heroku addons:create sendgrid:starter
 
 Set the sendgrid apikey credentials you created for heroku:
-(Go to yourapp => SendGrid => Settings => API KEYS)
-
-API_KEY: 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
+(Go to yourapp => SendGrid => Settings => API KEYS) 
 
 heroku config:set SENDGRID_USERNAME=apikey
 
@@ -626,7 +624,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
   In models/user.rb, type:
 
-  has_many :images => since user can add many images_helper
+  has_many :images => since user can add many images
 
   In models/image.rb, check if it shows:
 
@@ -652,6 +650,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
      "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
    end
 
+   #only allows uploads for jpg, jpeg, gif, and png
    def extension_whitelist
      %w(jpg jpeg gif png)
    end
@@ -703,7 +702,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
    restart your server.
 
 
-   6) Go to images_controller.rb, add ":picture" to "def image_params" method
+   Go to images_controller.rb, add ":picture" to "def image_params" method
 
    class ImagesController < ApplicationController
      before_action :set_image, only: [:show, :edit, :update, :destroy]

@@ -962,8 +962,104 @@ def nav_items
    "active" if current_page? path
  end
 
+ Authorization and classes:
+
+ <div class="row <%= "sortable" if logged_in?(:site_admin) %>" >
+
+ Note:
+
+ The class "sortable" is only available to the :site_admin
 
 
+
+Using Gritter(Displaying flash messages):
+
+1) Type: gem 'gritter', '~> 1.2'
+2) Type: rails g gritter:locale
+3) Go to application.js and type:
+
+    //= require gritter
+4) Go to scss files and at the top, type:
+
+  @import 'gritter';
+
+5) Go to helpers/application.rb:
+
+   Type:
+
+   def alerts
+     alert = (flash[:alert] || flash[:error] || flash[:notice])
+
+     if alert
+       alert_generator alert
+     end
+   end
+
+   def alert_generator msg
+     js add_gritter(msg, title: "Stebs Portfolio", sticky:false)
+   end
+
+6) Go to _form/html.erb and type:
+
+  <% if @portfolio.errors.any? %>
+    <% @portfolio.errors.full_messages.each do |error| %> => Loops through each error message
+      <%= alert_generator error %>
+    <% end %>
+  <% end %>
+
+
+7) Go to layouts/portfolio.rb and type:
+
+   <%= alerts %>
+
+Creating a form from scratch:
+
+<form action-"/portfolio" method="post">
+  <input type="hidden" value="<%= form_authenticity_token %>" name="form_authenticity_token">
+
+ <div class="field">
+   <label for="guide_title">Title</label>
+   <input type="text" name"@portfolio[title]" id="guide_title">
+ </div>
+
+
+ <div class="field">
+   <label for="guide_title">Subtitle</label>
+   <textarea row="5" cols="60" name="@portfolio[subtitle]"></textarea>
+ </div>
+
+ <div class="field">
+   <input type="submit">
+ </div>
+
+</form>
+
+
+Using Lib and using twitter to fetch tweets:
+
+1) Make lib directory available for portfolio:
+
+   Go to config/locales/application.rb:
+
+   Type:
+
+   module Portfolio
+     class Application < Rails::Application
+       config.active_record.raise_in_transactional_callbacks = true
+       config.action_controller.permit_all_parameters = true
+
+       config.eager_load_paths << "#{Rails.root}/lib" => Add this
+     end
+   end
+
+2) Create a file in lib/social_tool.rb and type:
+
+    module SocialTool
+      def self.twitter_search
+      end
+    end
+
+3) Get twitter gem from ruby gems
 
 
 
