@@ -1059,7 +1059,18 @@ Using Lib and using twitter to fetch tweets:
       end
     end
 
-3) Get twitter gem from ruby gems
+3) Get twitter gem from rubygems.org:
+
+   gem 'twitter', '~> 6.2'
+
+
+4)  Go to https://apps.twitter.com
+
+
+
+
+
+
 
 
 

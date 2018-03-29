@@ -112,7 +112,7 @@ Then enter in:
 heroku addons:create sendgrid:starter
 
 Set the sendgrid apikey credentials you created for heroku:
-(Go to yourapp => SendGrid => Settings => API KEYS) 
+(Go to yourapp => SendGrid => Settings => API KEYS) => See .profile for API KEY
 
 heroku config:set SENDGRID_USERNAME=apikey
 
@@ -291,18 +291,7 @@ Test key: sk_test_ZohGsPILiMHTYxozopAuwup2
 
   Go to config/secrets.yml:
 
-  development:
-    secret_key_base: 9eb8298ea024afb9105937d19e40e56f4c59b39218d50a154842fef37f017b2b5a45f4a7348b987220795da7a3783925e14e1f2e51c350acbff3350a4aa1df80
-    stripe_publishable_key: pk_test_psArKofI111hHTSXd3gyCzek
-    stripe_secret_key: sk_test_ZohGsPILiMHTYxozopAuwup2
-
-  test:
-    secret_key_base: d08e36064d0209960d502035c768b447c2394dd65f9df06cf1b092cb79c6cf3e0225d3d36c6596850f1c7ba9f768e6d54fbe2801be709521fad21aa6d94fb799
-
-  production:
-    secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
-    stripe_publishable_key: ENV['stripe_publishable_key']
-    stripe_secret_key: ENV['stripe_publishable_key']
+  See config/secrets.yml
 
     OR
 
