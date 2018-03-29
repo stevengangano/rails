@@ -5,12 +5,12 @@ Authentication
    class User < ActiveRecord::Base
     has_many :articles
     before_save { self.email = email.downcase }
-    validates :username, presence:true, 
-              uniqueness: { case_sensitive:false }, 
+    validates :username, presence:true,
+              uniqueness: { case_sensitive:false },
               length: { minimum: 3, maximum: 25 }
 
     VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
-    validates :email, presence: true, 
+    validates :email, presence: true,
               length: { maximum: 105 },
               uniqueness: { case_sensitive: false },
               format: { with: VALID_EMAIL_REGEX }
@@ -49,38 +49,38 @@ Authentication
 Adding Users from the UI
 
 1) Go to config/routes.rb and create route for sign up page
-  
+
   Type:
 
   #"users" = controller, "new" = action defined in controller
   get 'signup', to: 'users#new'
-  
-  
+
+
 2) Create a controller file, users.controller.rb. Create new action.
-    
+
   class UsersController < ApplicationController
     def new
-    
+
     end
   end
 
-  
-3) Create html template for new page. 
-  
-    -Create views/users folder. 
+
+3) Create html template for new page.
+
+    -Create views/users folder.
     -Create views/users/new.html.erb
-  
+
 4) Copy and paste articles/_form.html.erb file into users/new.html.erb like so:
 
-   Notes: 
+   Notes:
 
    1) change "obj: @article" to "obj: @user"
    2) Make the following changes to display username, email, and password
    3) Change button to say "Sign up"
-    
+
 
     <h1 class="text-center"> Signup for Alpha Blog </h1>
-           
+
     <%= render 'shared/errors', obj: @user %> => changes to "@user" because it will pass the users error messages here
 
     <div class="row">
@@ -90,22 +90,22 @@ Adding Users from the UI
             <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Username" -->
-                  <%= f.label :username %> 
+                  <%= f.label :username %>
               </div>
               <div class="col-sm-8">
                   <!--Displays input box, ":title" grabs from  -->
-                  <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>    
+                  <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>
               </div>
            </div>
 
            <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Email" -->
-                  <%= f.label :email %> 
+                  <%= f.label :email %>
              </div>
               <div class="col-sm-8">
                   <!--Displays input box -->
-                  <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %> 
+                  <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %>
              </div>
           </div>
 
@@ -113,25 +113,25 @@ Adding Users from the UI
            <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Password" -->
-                  <%= f.label :password %> 
+                  <%= f.label :password %>
              </div>
               <div class="col-sm-8">
                   <!--Displays input box -->
-                  <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %> 
+                  <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %>
              </div>
-          </div>    
+          </div>
 
 
           <div class="form-group">
             <div class="col-sm-10 col-xs-offset-2">
                 <!--Creates a submit button -->
-                <%= f.submit "Sign up", class:"btn btn-primary btn-lg" %> 
+                <%= f.submit "Sign up", class:"btn btn-primary btn-lg" %>
             </div>
           </div>
 
         <div class="col-xs-4 col-xs-offset-4 text-center">
           [ <%= link_to "All Articles", articles_path %> ]
-       </div> 
+       </div>
 
             <% end %>
 
@@ -139,19 +139,19 @@ Adding Users from the UI
     </div>
 
 5) Go to users_controller.rb and create new instance variable in the new action:
-              
+
    Type:
-   
+
    def new
     @user = User.new => creates a new user
    end
-              
+
 6) Create routes for submit button (2 ways). Go to config/routes.rb:
-  
+
   Type:
-  
+
   Rails.application.routes.draw do
-  
+
   #Root route (/)
   root 'pages#home'
   #About route (/about)
@@ -159,21 +159,21 @@ Adding Users from the UI
 
   #Creates CRUD for articles. Type: rake routes
   resources :articles
-  
+
   #"users" = controller, "new" = action defined in controller
   get 'signup', to: 'users#new'
-    
+
   #First method. #"users" = controller, "create" = action defined in controller
   post 'users', to: 'users#create'
-    
-  #or 
-    
+
+  #or
+
   #Second method. Creates CRUD routes but omits "new" because we already created it
   resources :users, except: [:new]
-  
-    
+
+
 7) Go back to users.controller.rb and define a "create" action to connect routes.rb:
-    
+
    def create
      @user = User.new(user_params) => "user_params" needs to be white listed below into a separate method.
      if @user.save => if @user is abled to be saved,
@@ -183,7 +183,7 @@ Adding Users from the UI
       render 'new' => Displays: /signup => if @user is not able to be saved
      end
    end
-  
+
   private
   def user_params
     params.require(:user).permit(:username, :email, :password) => ":user" is the top level key. For example, user.username, user.email, user.password.password
@@ -191,7 +191,7 @@ Adding Users from the UI
 
 
 8) Go to UI and go to "/signup" and create a username.8
-               
+
   Type: User.all => checks if user was added to the database
 
   Push to git hub "Add users from UI"
@@ -200,11 +200,11 @@ Adding Users from the UI
 Editing a User
 
 1) Go to users.controller.rb and add edit action:
-  
+
    #Go to users/:id/
    def edit
     @user = User.find(params[:id]) => This finds the users id
-   end  
+   end
 
 
 2) Go to views/users and create edit.html.erb:
@@ -216,7 +216,7 @@ Note: Only changes is "Edit your account" and submit button says "Update"
 
 <h1 class="text-center"> Edit your account </h1>
 
-<%= render 'shared/errors', obj: @user %> 
+<%= render 'shared/errors', obj: @user %>
 
 <div class="row">
   <div class='col-xs-12'>
@@ -225,22 +225,22 @@ Note: Only changes is "Edit your account" and submit button says "Update"
         <div class="form-group">
           <div class="control-label col-sm-2">
               <!--Displays "Username" -->
-              <%= f.label :username %> 
+              <%= f.label :username %>
           </div>
           <div class="col-sm-8">
               <!--Displays input box, ":title" grabs from  -->
-              <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>    
+              <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>
           </div>
        </div>
 
        <div class="form-group">
           <div class="control-label col-sm-2">
               <!--Displays "Email" -->
-              <%= f.label :email %> 
+              <%= f.label :email %>
          </div>
           <div class="col-sm-8">
               <!--Displays input box -->
-              <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %> 
+              <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %>
          </div>
       </div>
 
@@ -248,25 +248,25 @@ Note: Only changes is "Edit your account" and submit button says "Update"
        <div class="form-group">
           <div class="control-label col-sm-2">
               <!--Displays "Password" -->
-              <%= f.label :password %> 
+              <%= f.label :password %>
          </div>
           <div class="col-sm-8">
               <!--Displays input box -->
-              <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %> 
+              <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %>
          </div>
-      </div>    
+      </div>
 
 
       <div class="form-group">
         <div class="col-sm-10 col-xs-offset-2">
             <!--Creates a submit button -->
-            <%= f.submit "Update", class:"btn btn-primary btn-lg" %> 
+            <%= f.submit "Update", class:"btn btn-primary btn-lg" %>
         </div>
       </div>
 
     <div class="col-xs-4 col-xs-offset-4 text-center">
       [ <%= link_to "All Articles", articles_path %> ]
-   </div> 
+   </div>
 
         <% end %>
 
@@ -282,7 +282,7 @@ Note: Only changes is "Edit your account" and submit button says "Update"
     @user = User.find(params[:id]) => This finds users ID
     if @user.update(user_params) => updates the Users account
      flash[:success] = "Your account was updated successfully"
-     redirect_to articles_path 
+     redirect_to articles_path
     else
       render :edit
     end
@@ -291,13 +291,13 @@ Note: Only changes is "Edit your account" and submit button says "Update"
 4) Create partial for users/new.html.erb & users/edit.html.erb:
 
    Note:
-   
+
    #For submit button. If the user is new, show "Sign up" if not show "Update account"
    <%= f.submit(@user.new_record? ? "Sign up" : "Update account", class:"btn btn-primary btn-lg" %>
 
    Create _form.html.erb:
 
-    <%= render 'shared/errors', obj: @user %> 
+    <%= render 'shared/errors', obj: @user %>
 
     <div class="row">
       <div class='col-xs-12'>
@@ -306,22 +306,22 @@ Note: Only changes is "Edit your account" and submit button says "Update"
             <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Username" -->
-                  <%= f.label :username %> 
+                  <%= f.label :username %>
               </div>
               <div class="col-sm-8">
                   <!--Displays input box, ":title" grabs from  -->
-                  <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>    
+                  <%= f.text_field :username, class: "form-control", placeholder: "Enter Username", autofocus: true %>
               </div>
            </div>
 
            <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Email" -->
-                  <%= f.label :email %> 
+                  <%= f.label :email %>
              </div>
               <div class="col-sm-8">
                   <!--Displays input box -->
-                  <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %> 
+                  <%= f.email_field :email, class:"form-control", placeholder: "Enter your email" %>
              </div>
           </div>
 
@@ -329,25 +329,25 @@ Note: Only changes is "Edit your account" and submit button says "Update"
            <div class="form-group">
               <div class="control-label col-sm-2">
                   <!--Displays "Password" -->
-                  <%= f.label :password %> 
+                  <%= f.label :password %>
              </div>
               <div class="col-sm-8">
                   <!--Displays input box -->
-                  <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %> 
+                  <%= f.password_field :password, class:"form-control", placeholder: "Enter password" %>
              </div>
-          </div>    
+          </div>
 
 
           <div class="form-group">
             <div class="col-sm-10 col-xs-offset-2">
                 <!--Creates a submit button -->
-                <%= f.submit(@user.new_record? ? "Sign up" : "Update account", class:"btn btn-primary btn-lg" %> 
+                <%= f.submit(@user.new_record? ? "Sign up" : "Update account", class:"btn btn-primary btn-lg" %>
             </div>
           </div>
 
         <div class="col-xs-4 col-xs-offset-4 text-center">
           [ <%= link_to "All Articles", articles_path %> ]
-       </div> 
+       </div>
 
             <% end %>
 
@@ -355,9 +355,9 @@ Note: Only changes is "Edit your account" and submit button says "Update"
     </div>
 
 5) Go to users/new.html.erb & users/edit.html.erb:
-                  
+
    Type:
-                  
+
    <%= render 'form' %>
 
 
@@ -367,7 +367,7 @@ Creating Show Page for Users
 
   #/users/:id
 	def show
-		@user = User.find(params[:id]) 
+		@user = User.find(params[:id])
 	end
 
 2) Create users/show.html.erb
@@ -383,11 +383,11 @@ Creating Show Page for Users
 <h4 class="text-center">
   <%= @user.username %>'s articles
 </h4>
-  
+
 3) Go to helpers/application_helper.rb to define gravatar_for
-    
+
   Type:
-    
+
   module ApplicationHelper
 
     def gravatar_for(user, options = {size: 80})
@@ -400,11 +400,11 @@ Creating Show Page for Users
   end
 
 4) Listing articles only the user posted on users show page
-  
+
    1) Create a partial file called articles/_article.html.erb
-   2) Cut and paste articles/index.html.erb to _article.html.erb 
+   2) Cut and paste articles/index.html.erb to _article.html.erb
    3) In index.html.erb, type:
-           
+
       <%= render 'article' obj: @article %>
 
    4) Go to /articles to check if all articles are there
@@ -412,27 +412,27 @@ Creating Show Page for Users
    6) Go to show.html.erb and type:
 
    <%= render 'articles/article', obj:@user.articles %> => Displays only the users articles
- 
-            
+
+
 Create index action for users ("/users")
-  
+
 1) Create index action. Go to uers_controller.rb.
-              
+
    def index
     @users = User.all => Grabs all users
    end
-            
+
 2) Create file named users/index.html.erb
-                
+
    Type:
-                
+
    <h1 class="text-center"> All Bloggers </h1>
 
     <% @users.each do |user| %> => "@users" grabs all users from "def index"
 
       <ul class="listing">
-        <div class="row"> 
-          <div class="well col-md-4 col-md-offset-4">   
+        <div class="row">
+          <div class="well col-md-4 col-md-offset-4">
             <li><%= link_to gravatar_for(user), user_path(user) %></li> => displays gravatar image
             <li class="article-title"> <%= link_to user.username, user_path(user) %></li> => displays use name
             <li><small><%= pluralize(user.articles.count, "article") if user.articles %> </small></li> => displays number of articles if there any articles
@@ -485,7 +485,7 @@ Using pagination so not all articles will be displayed in one page
    def index
     @articles = Article.all
    end
-  
+
    To:
 
    def index
@@ -493,30 +493,30 @@ Using pagination so not all articles will be displayed in one page
    end
 
 3) Go to articles/index.html.erb
-    
-   <div class="center"> 
-    <%= will_paginate %>
+
+   <div class="center">
+    <%= will_paginate @articles %>
    </div>
-     
+
    <%= render 'article', obj: @articles %>
 
-   <div class="center"> 
-    <%= will_paginate %>
+   <div class="center">
+    <%= will_paginate @articles %>
    </div>
-     
-     
+
+
 Adding pagination for "/users" (Same as above) => Displays all users
-     
+
 1) Go to users_controller.rb
-     
+
    def index
     @users = Users.paginate(page: params[:page], per_page: 5) => Displays 5 per page
    end
-  
+
 2) Go to users/index.html.erb
-    
+
     Type under <div class="listing">:
-        
+
     <%= will_paginate %>
 
 Adding pagination articles displayed for each users page (user/:id)
@@ -529,12 +529,9 @@ Adding pagination articles displayed for each users page (user/:id)
    end
 
 2) Go to users/show.html.erb. Type this at the top and bottom:
-    
-   <div class="text-center">         
+
+   <div class="text-center">
     <%= will_paginate @user_articles %>
   </div>
 
    <%= render 'articles/article', obj: @user_articles %> => Change to @user_articles
-		 
-		 
-

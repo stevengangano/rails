@@ -842,35 +842,125 @@ Linking helpers with html.erb:
 
 application_helper.rb
 
-def login_helper
+def login_helper style = ''
    #if current user is a guest user, show register and login links
    if current_user.is_a?(GuestUser)
-    (link_to "Register", new_user_registration_path, class: "nav-link") + " ".html_safe + (link_to "Login", new_user_session_path, class: "nav-link")
+    (link_to "Register", new_user_registration_path, class: style) + " ".html_safe + (link_to "Login", new_user_session_path, class: style)
    else
-    link_to "Logout", destroy_user_session_path, method: :delete, class: "nav-link"
+    (link_to "Logout", destroy_user_session_path, method: :delete, class: style) + " ".html_safe + (link_to "Edit", edit_user_registration_path, class: style)
    end
 end
 
 welcome/index.html.erb:
 
 <a href="#" class="nav-link">Home</a>
-<%= login_helper %>
+#'nav-link' is the class
+<%= login_helper 'nav-link' >%
+
+Styling scaffold submit buttons:
+
+Must type
+<div class="actions">
+  <%= f.submit "Submit", class: 'btn btn-primary' %>
+</div>
 
 
+Styling with font-aweseome:
 
+1) Go to rubygems.org
+2) Type: font-awesome-rails and grab latest version => bundle install
+3) @import "font-awesome" => top of scss file. must be above @import "bootstrap"
+4) <li><a href="#"> <%= fa_icon "twitter" %> </a></li> => embedded ruby
 
+Nav helpers (inserting nav links):
 
+1) Go to application_helper.rb:
 
+   Type:
 
+   def nav_helper style, tag_type
+ nav_links =< <NAV
+ <#{tag_type}><a href="#{root_path}" class="#{style}">Home</a></#{tag_type}>
+ <#{tag_type}><a href="#{portfolio_path}" class="#{style}">About me</a></#{tag_type}>
+ NAV
+     nav_links.html_safe
+   end
 
+2) Go to nav partial and insert:
 
+  <ul class="navbar-nav">
+    <li class="nav-item active">
+      <div><%= link_to "Home", root_path, class:'nav-link'  %></div>
+    </li>
+    <li class="nav-item">
+      <div><%= link_to "Blog", blogs_path, class:'nav-link' %></div>
+    </li>
+    <li class="nav-item">
+      <div><%= link_to "Portfolio", portfolio_path, class:'nav-link' %></div>
+    </li>
+    <%= nav_helper 'nav-link', 'li' %> => Add class and tag
+  </ul>
 
+Checking if a page is active:
 
+1) Go to application_helper.rb:
 
+  def active? path
+    "active" if current_page? path
+  end
 
+2) Insert inside ${active?} inside class
 
+  Type:
 
+  def nav_helper style, tag_type
+  nav_links =< <NAV
+  <#{tag_type}><a href="#{root_path}" class="#{style} #{active? root_path}">Home</a></#{tag_type}>
+  <#{tag_type}><a href="#{portfolio_path}" class="#{style} #{active? portfolio_path}">About me</a></#{tag_type}>
+  NAV
+    nav_links.html_safe
+  end
 
+Better way of checking if page is active inside application_helper.rb:
+
+def nav_items
+   [
+     {
+       url: root_path,
+       title: 'Home'
+     },
+     {
+       url: about_me_path,
+       title: 'About Me'
+     },
+     {
+       url: contact_path,
+       title: 'Contact'
+     },
+     {
+       url: blogs_path,
+       title: 'Blog'
+     },
+     {
+       url: portfolios_path,
+       title: 'Portfolio'
+     },
+   ]
+ end
+
+ def nav_helper style, tag_type
+   nav_links = ''
+
+   nav_items.each do |item|
+     nav_links << "<#{tag_type}><a href='#{item[:url]}' class='#{style} #{active? item[:url]}'>#{item[:title]}</a></#{tag_type}>"
+   end
+
+   nav_links.html_safe
+ end
+
+ def active? path
+   "active" if current_page? path
+ end
 
 
 

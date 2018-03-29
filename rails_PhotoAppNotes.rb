@@ -553,7 +553,7 @@ Fixing conflict bug (when a user signs up the first time there is an error)
 
 1) Go to javascript/application.js:
 
-  Remove "//= require turbolinks"
+   Remove "//= require turbolinks"
 
 2) Remove gem "turbolinks" => Run bundle install
 
@@ -640,7 +640,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
    create  app/uploaders/picture_uploader.rb
 
 
- 3) Go to uploaders/picture_uploader.rb
+ 7) Go to uploaders/picture_uploader.rb
 
  class PictureUploader < CarrierWave::Uploader::Base
    include CarrierWave::MiniMagick
@@ -658,7 +658,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
  end
 
-7) Go to models/image.rb file:
+8) Go to models/image.rb file:
 
     class Image < ActiveRecord::Base
       belongs_to :user
@@ -677,7 +677,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
     end
 
-8)  Go to apps/views/images/_form.html.erb:
+9)  Go to apps/views/images/_form.html.erb:
 
     1) Go to line 1, and add "multipart: true":
 
@@ -697,7 +697,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
     Note: Remove "User ID" form field
 
-9) Go to 'images/new' in web browser to see if form works:
+10) Go to 'images/new' in web browser to see if form works:
 
    Note if there is an error "uninitialized constant Image::PictureUploader",
    restart your server.
@@ -782,7 +782,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
    end
 
 
-10) Showing user ID on views/images/show.html.erb:
+11) Showing user ID on views/images/show.html.erb:
 
     Go to 'create' action, in images_controller.rb:
 
@@ -792,7 +792,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
     Type: @images.user_id => Grabs user ID (ex: 1), @images.inspect shows current_user info
 
-11) Displaying image instead of a string to images/show.html.erb:
+12) Displaying image instead of a string to images/show.html.erb:
 
   <%- model_class = Image -%>
   <div class="page-header">
@@ -811,12 +811,12 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
     <dd><%= @image.user_id %></dd>
   </dl>
 
-12) Remove links from form images/index.html.erb:
+13) Remove links from form images/index.html.erb:
 
     Only show the "name" "picture" and "actions" column
 
 
-13) Show images in images/index.html.erb:
+14) Show images in images/index.html.erb:
 
   <% @images.each do |image| %>
   <tr>
@@ -827,7 +827,7 @@ gem 'dotenv-rails', '~> 2.1', '>= 2.1.2'
 
 Validating Images
 
-14) White list for images jpg, jpeg, gif, png, go to uploadders/picture_uploader.rb:
+15) White list for images jpg, jpeg, gif, png, go to uploadders/picture_uploader.rb:
 
     Uncomment:
 
@@ -837,7 +837,7 @@ Validating Images
       %w(jpg jpeg gif png)
     end
 
-15) Go to models/image.rb: => If image is greater than 5MB, show error.
+16) Go to models/image.rb: => If image is greater than 5MB, show error.
 
     class Image < ActiveRecord::Base
       belongs_to :user
@@ -853,7 +853,7 @@ Validating Images
 
     end
 
-16) Create error message grom app/view/images/_form.html.erb:
+17) Create error message grom app/view/images/_form.html.erb:
 
     <script type="text/javascript">
       $('#image_picture').bind('change', function() {
@@ -865,7 +865,7 @@ Validating Images
     <script>
 
 
-17) Open your picture_uploader.rb file within the app/uploaders folder and add the following two lines right below the class definition:
+18) Open your picture_uploader.rb file within the app/uploaders folder and add the following two lines right below the class definition:
 
     Note: Will only display if <= 300x300
 
@@ -873,7 +873,7 @@ Validating Images
       include CarrierWave::MiniMagick
       process resize_to_limit: [300, 300]
 
-18) When an image is uploaded, it goes to:
+19) When an image is uploaded, it goes to:
 
   public/uploads/image/picture
 
