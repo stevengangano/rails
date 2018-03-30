@@ -1064,8 +1064,146 @@ Using Lib and using twitter to fetch tweets:
    gem 'twitter', '~> 6.2'
 
 
-4)  Go to https://apps.twitter.com
+4)  Go to https://apps.twitter.com and grab API KEYS
 
+5) Go to lib/social_tool.rb and type:
+
+module Social Tool
+  def self.twitter_search
+    client = Twitter::REST::Client.new do |config|
+      config.consumer_key        = ENV.fetch("TWITTER_CONSUMER_KEY")
+      config.consumer_secret     = ENV.fetch("TWITTER_CONSUMER_SECRET")
+      config.access_token        = ENV.fetch("TWITTER_ACCESS_TOKEN")
+      config.access_token_secret = ENV.fetch("TWITTER_ACCESS_SECRET")
+    end
+  end
+end
+
+6) Create .env file and enter the keys:
+
+  TWITTER_CONSUMER_KEY=see .env file
+  TWITTER_CONSUMER_SECRET=see .env file
+  TWITTER_ACCESS_TOKEN=see .env file
+  TWITTER_ACCESS_SECRET=see .env file
+
+7) Testing to see if API key is being fetched:
+
+   Go rails consle and type:
+
+   ENV.fetch("TWITTER_CONSUMER_KEY")
+
+
+8) Add line to fetch data:
+
+  module SocialTool
+    def self.twitter_search
+      client = Twitter::REST::Client.new do |config|
+        config.consumer_key        = ENV.fetch("TWITTER_CONSUMER_KEY")
+        config.consumer_secret     = ENV.fetch("TWITTER_CONSUMER_SECRET")
+        config.access_token        = ENV.fetch("TWITTER_ACCESS_TOKEN")
+        config.access_token_secret = ENV.fetch("TWITTER_ACCESS_SECRET")
+      end
+
+      #Add This. Grabs 6 of the most recent tweets with "#rails"
+      client.search("type anything here", result_type: 'recent').take(6).collect do |tweet|
+        "#{tweet.user.screen_name}: #{tweet.text}"
+      end
+
+    end
+  end
+
+9) Create a route to view tweets (config/routes.rb), type:
+
+   get 'tech-news', to: 'home#tech_news'
+
+10) Create action fom home_controller.rb:
+
+    def tech_news
+      @tweets = SocialTool.twitter_search
+    end
+
+11) Create file for view (home/tech_news.html.erb):
+
+    <div class="inner cover">
+      <h1 class="cover-heading">Rails News</h1>
+
+      <div class="row">
+        <% @tweets.each do |tweet| %>
+          <div class="col-md-6">
+            <div class="tech-news">
+              <div class="card">
+                <%= tweet %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+12) Create a helper (helpers/home_helper.rb) Taking a tweet and making the links
+within the string clickable:
+
+module HomeHelper
+  def twitter_parser tweet
+    #For practice purposes in rails console
+    tweet = "ReactDOM: Learn Ruby on Rails: How to easily build high tech web apps #rubyonrails #ror #ruby #rails #rails5 #sql #mysql… https://t.co/NRiJ1zKSB5"
+
+    #regex needed to look for a link and make it clickable within a string
+    regex = %r{
+      \b
+      (
+        (?: [a-z][\w-]+:
+         (?: /{1,3} | [a-z0-9%] ) |
+          www\d{0,3}[.] |
+          [a-z0-9.\-]+[.][a-z]{2,4}/
+        )
+        (?:
+         [^\s()<>]+ | \(([^\s()<>]+|(\([^\s()<>]+\)))*\)
+        )+
+        (?:
+          \(([^\s()<>]+|(\([^\s()<>]+\)))*\) |
+          [^\s`!()\[\]{};:'".,<>?«»“”‘’]
+        )
+      )
+    }ix
+
+    #method used to find url in string surround it within an a tag
+    tweet.gsub(regex) do |url|
+      "<a href=#{url} target='_blank'>#{url}</a>"
+    end.html_safe
+
+  end
+
+end
+
+13) Testing in rails console:
+
+    1) Type: tweet = "ReactDOM: Learn Ruby on Rails: How to easily build high tech web apps #rubyonrails #ror #ruby #rails #rails5 #sql #mysql… https://t.co/NRiJ1zKSB5"
+    2) Type: regular expression above
+    3) type: tweet.gsub(regex) { |url| "<a href=#{url} target='_blank'>#{url}</a>" }
+    4) Should return a string => "ReactDOM: Learn Ruby on Rails: How to easily build high tech web apps #rubyonrails #ror #ruby #rails #rails5 #sql #mysql… <a href=https://t.co/NRiJ1zKSB5 target='_blank'>https://t.co/NRiJ1zKSB5</a>"
+
+
+14) Go to home/tech_news.html.erb and type:
+
+<div class="inner cover">
+  <h1 class="cover-heading">Rails News</h1>
+
+  <div class="row">
+    <% @tweets.each do |tweet| %>
+      <div class="col-md-6">
+        <div class="tech-news">
+          <div class="card">
+            <%= twitter_parser tweet %> => Add method from helper here
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+
+Ruby Gems:
 
 
 
