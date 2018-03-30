@@ -676,6 +676,27 @@ end
 3)
 <% puts 'here there' %> => Shows in the console
 
+Rendering collections:
+
+  Index.html.erb => "collection: @portofolios" is from "def index" in controller
+  "partial: portfolio" is from "_portfolio.html.erb
+
+  <%= render partial: 'portfolio', collection: @portfolios %>
+
+
+  porfolio in "portfolio.body" is singular from collection: @portfolio
+  _portfolio.html.erb
+
+  <div class="blog-post">
+    <h2 class="blog-post-title"> </h2>
+    <p class="blog-post-meta"> Created: <%= distance_of_time_in_words(portfolio.inspect, Time.now) %> ago </p>
+    <p class="blog-post-meta">
+      <td><%= link_to "Show", portfolio_show_path(portfolio) %></td> /
+      <td><%= link_to "Edit", edit_portfolioo_path(portfolio) if logged_in?(:site_admin) %></td> /
+      <td><%= link_to "Delete", portfolioo_path(portfolio), method: :delete, data: { confirm: 'Are you sure?' } if logged_in?(:site_admin) %></td>
+    <p> <%= portfolio.body %> </p>
+  </div>
+
 
 Spacer template:
 
@@ -1204,6 +1225,155 @@ end
 
 
 Ruby Gems:
+
+Bootstrap:
+
+1) Go rubygems.org to get bootstrap ruby gem => bundle install
+2) Gemfilelock shows all your dependencies for your Gemfile
+3) Check if sprockets-rails in Gemfilelock is at least v2.3.2
+3) Change application.css to application.scss
+4) Type: @import 'bootstrap'; at the top of all .scss files
+5) Go to application.js and include bootstrap-sprockets:
+
+  //= require jquery
+  //= require jquery_ujs
+  //= require bootstrap-sprockets => Add this
+
+Debugging:
+
+For example:
+
+When to use 'def self.any_method':
+
+1) When your calling it from within the same controller:
+
+  @portfolio = Portfolioo.two_portfolios => same as Portfolioo.limit(2) => only shows 2 blogs
+
+2) Go to models/portfolio.rb:
+
+  def self.two_portfolios
+    limit(2)
+  end
+
+3) Debugging "@portfolio" with puts:
+
+  @portfolio = Portfolioo.two_portfolios
+  puts "*" * 500
+  puts @portfolio.inspect
+  puts "*" * 500
+
+4) Using byebug:
+
+  @portfolio = Portfolioo.two_portfolios
+  byebug
+
+  Note: Go to terminal and it shows the application stopped at this point.
+  Anything declared prior to the byebug will work. Anything after will be
+  "nil". To exit, type "continue" in the terminal.
+
+  Also type, "params" in the terminal. It will show controller, action name (
+  for example: index create, show, destroy, etc), where the page is calling from.
+
+5) Using pry-byebug:
+
+   Example 1:
+
+   1) Go to gemfile and type: gem 'pry-byebug' => run "bundle"
+   2) For example, forgot to add ':show' in the before action in portfolios
+      controller:
+
+      before_action :set_portfolio_item, only: [:edit, :update, :destroy]
+
+   3) Go to portfolio.show page and and at the top type:
+
+      <% binding.pry % => embedded ruby for html.erb files
+
+      Note:
+
+      Type: params => will show which controller, action
+
+    4) Go to the action and at the top type:
+
+       <% binding.pry %
+
+    5) Then type what variable is suppose to go in there:
+
+       For example, type: @portfolio
+
+    6) If "nil", that means it is missing.
+
+
+   Example 2:
+
+   1) For example, type:
+
+     def index
+       binding.pry
+       @portfolio = Portfolioo.all
+       # @portfolio = Portfolioo.paginate(page: params[:page], per_page: 5)
+       @page_title = "Portfolio | Home"
+     end
+
+   2) Go to terminal
+
+   3) Type: @portfolio => displays nil
+
+   4) Step over to the next line, type: "next" or "continue"
+
+   5) Type: @portfolio => displays portfolio variable
+
+   6) To exit, type: "exit"
+
+
+Creating a method example:
+
+Application controller:
+
+class Application Controller < ActionController::Base
+
+2)
+
+before_action :set_copyright
+
+3)
+
+def set_copyright
+    @copyright = DevcampViewTool::Renderer.copyright 'Steven', 'All Rights Reserved'
+  end
+
+end
+
+1)
+
+module DevcampViewTool
+    class Renderer
+      def self.copyright name, msg
+        "&copy; #{Time.now year} | <b>#{name}<b> #{msg}.html_safe"
+      end
+    end
+  end
+
+4) Layouts/application.html.erb:
+
+   <%= @copyright %
+
+
+Creating a method so blogs are in order by time:
+
+1) Go to models/portfolio.rb:
+
+   def self.recent
+     order("created_at DESC")
+   end
+
+2) Go to controller/portfoioos_controller.rb:
+
+
+  def index
+    @portfolio = Portfolioo.recent.all
+    #or
+    @portfolio = Portfolioo.recent.paginate(page: params[:page], per_page: 5)
+  end
 
 
 
