@@ -1375,6 +1375,215 @@ Creating a method so blogs are in order by time:
     @portfolio = Portfolioo.recent.paginate(page: params[:page], per_page: 5)
   end
 
+  Creating a category topics for blogs:
+
+  1) Type: rails g model Topic title:string
+
+    Note:
+    Creates a migration File with table of "topics" and column of "title"
+    Creates a model File (models/topic.rb)
+
+
+  2) Type: rake db: migrate
+
+  3) Create a migration file:
+
+    Type: rails g migration add_topic_reference_to_blogs topic:references
+
+    Go to migration file and check if:
+
+    :blogs, :topic, foreign_key: true
+
+  4) If so, rake db:migrate. Should add topic_id to "blogs" table
+
+  5) Go to models/blog.rb
+
+    Type: belongs_to :topic
+
+  6) Go to models/topic.rb:
+
+    Type: has_many :blogs
+
+
+  7) Go to blog_controller.rb:
+
+    Add ":topic_id" to "def blog_params"
+
+
+  8) Create form dropdown to select topic:
+
+      <div class="form-group">
+      <%= f.label :topic_id %><br>
+      <%= f.collection_select(:topic_id, Topic.all, :id, :title, => :title (topic name)
+                              {
+                                selected: @blog.topic_id, => add topic ID to the blog
+                                include_blank: true
+                              },
+                              class: 'form-control'
+                              )
+      %>
+    </div>
+
+
+  9) Display topic name in blog/show.html.erb:
+
+  <p>
+    <strong>Title:</strong>
+    <%= @blog.title %>
+  </p>
+
+  <p> <%= @blog.topic.title %> </p> => Add this
+
+
+  <p>
+    <strong>Body:</strong>
+    <%= @blog.body %>
+  </p>
+
+
+  10) Creating topics from the console:
+
+      Topic.create!(title: "Rails")
+
+
+  11) Create index page and show page for topics:
+
+      Type: rails g controller Topics index show
+
+      Creates: index.html.erb, show.html.erb, index and show routes
+      in routes.rb
+
+      Note: Index page displays the list of topics to choose from
+      Show page displays blogs associated with that topic.
+
+  12) Refactor index and show routes in routes.rb:
+
+      Change: get 'topics/index', get 'topics/show' to
+
+      resources :topics, only: [:index, :show]
+
+      Note:
+
+      Type: rake routes to see if '/topics' and '/topics/:id' is shown
+
+  13) Go to topics_controller.rb and type:
+
+      class TopicsController < ApplicationController
+        layout 'portfolio'
+        def index
+          @topics = Topic.all
+        end
+
+        def show
+          @topic = Topic.find(params[:id])
+        end
+
+      end
+
+  14) Test in index.html.erb:
+
+      <% @topics.each do |topic| %>
+        <h1><%= topic. title %></h1>
+      <% end %>
+
+  15) Test in show.html.erb:
+
+      <h1><%= @topic.title %> </h1>
+
+
+  16) Associate each topic with blog in topics_controller.rb:
+
+
+      class TopicsController < ApplicationController
+        layout 'portfolio'
+        def index
+          @topics = Topic.all
+        end
+
+        def show
+          @topic = Topic.find(params[:id])
+          @blogs = @topic.blogs.all #can add pagination and recent
+        end
+
+      end
+
+  17) Go to topics/show.html.erb:
+
+      <h1><%= @topic.title %> </h1>
+
+      <%= render @blogs %> => Add this. Renders blogs under the same topic
+
+
+  18) Render topics on topics/index.html.erb:
+
+      <h1> Topics </h1>
+
+      <%= render @topics %
+
+  19) Create partial for the collection @topics (topics/_topic.html.erb):
+
+
+      <div>
+        <%= link_to topic.title, topic_path(topic) %>
+      </div>
+
+
+      Note:
+
+      This creates links to blogs only associated
+      with the topic assigned to it
+
+
+  20) Showing topic links that ONLY have blogs:
+
+      Go to models/topic.rb and type:
+
+      def self.with_blogs
+        includes[:blogs].where.not(blogs: { id: nil })
+      end
+
+
+  21) Go to topics_controller.rb:
+
+  class TopicsController < ApplicationController
+    before_action :set_sidebar_topics, only: [:index] => Add this
+    layout 'portfolio'
+
+    def index
+      @topics = Topic.all
+    end
+
+    def show
+      @topic = Topic.find(params[:id])
+      #passed to show page
+      @blogs = @topic.blogs.all #can use paginate and recent
+    end
+
+    #ADD THIS
+    private
+    def set_sidebar_topics
+      @side_bar_topics = Topic.with_blogs
+    end
+
+  end
+
+  22) Go to topics/_topic.html.erb and type:
+
+      <% @side_bar_topics.each do |topic| %>
+        <%= link_to topic.title, topic_path(topic) %>
+      <% end %>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
