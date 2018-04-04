@@ -920,8 +920,8 @@ Uploading images for production:
 11) Set your credentials for AWS with heroku:
 
     heroku config:set S3_BUCKET_NAME=stebz-photo-app
-    heroku config:set AWS_ACCESS_KEY_ID=AKIAJ46D5PG7JFXAAJYQ
-    heroku config:set AWS_SECRET_ACCESS_KEY=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
+    heroku config:set AWS_ACCESS_KEY_ID=AKIA
+    heroku config:set AWS_SECRET_ACCESS_KEY=WvC
     heroku config:set AWS_REGION=us-east-1
 
 12) Go to https://github.com/sorentwo/carrierwave-aws and copy:

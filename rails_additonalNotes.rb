@@ -1574,6 +1574,16 @@ Creating a method so blogs are in order by time:
       <% end %>
 
 
+Dropping a table:
+1) rails generate migration DropInstalls
+
+2)
+class DropInstalls < ActiveRecord::Migration
+  def change
+    drop_table :installs
+  end
+end
+
 
 
 
