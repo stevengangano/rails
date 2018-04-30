@@ -66,8 +66,11 @@ view/home.html.erb:
 
 Creating a resource generator (minimalist generator):
 
-Type: rails g resource Portfolio title: string subtitle:string body:text main_image:text_area thumb_image:text_area
+Type: rails g resource Ad title: string price:string description:text ad_image:string thumb_image:text_area
 
+rails g resource Detail address: string city:string postal_code:string state:string
+
+rails g resource Checkout
 Note:
 1) Creates a migration file
 2) Creates model file
@@ -1539,7 +1542,7 @@ Creating a method so blogs are in order by time:
       Go to models/topic.rb and type:
 
       def self.with_blogs
-        includes[:blogs].where.not(blogs: { id: nil })
+        includes(:blogs).where.not(blogs: { id: nil })
       end
 
 
@@ -1559,15 +1562,28 @@ Creating a method so blogs are in order by time:
       @blogs = @topic.blogs.all #can use paginate and recent
     end
 
-    #ADD THIS
-    private
+
+    private => Add this
     def set_sidebar_topics
       @side_bar_topics = Topic.with_blogs
     end
 
   end
 
-  22) Go to topics/_topic.html.erb and type:
+  22) Show sidebar in ads_controller.rb on index page:
+
+  class AdsController < ApplicationController
+    before_action :set_sidebar_topics, only: [:index]
+
+
+    private => Add this
+    def set_sidebar_topics
+      @side_bar_topics = Topic.with_blogs
+    end
+
+  end
+
+  23) Go to topics/_topic.html.erb and type:
 
       <% @side_bar_topics.each do |topic| %>
         <%= link_to topic.title, topic_path(topic) %>
@@ -1583,6 +1599,358 @@ class DropInstalls < ActiveRecord::Migration
     drop_table :installs
   end
 end
+
+
+Redirect to previous page after logging in if user is not signed in.
+
+1) Go to application_controller.rb:
+
+class ApplicationController < ActionController::Base
+  before_filter :store_current_location, :unless => :devise_controller? => Add this
+
+  # Prevent CSRF attacks by raising an exception.
+  # For APIs, you may want to use :null_session instead.
+  protect_from_forgery with: :exception
+
+
+  include DeviseWhitelist
+
+  private => Add this
+    # override the devise helper to store the current location so we can
+    # redirect to it after loggin in or out. This override makes signing in
+    # and signing up work automatically.
+    def store_current_location
+      store_location_for(:user, request.url)
+    end
+
+end
+
+2) Go to ads_controller.rb and type this:
+
+before_filter :authenticate, :except => [:index, :new, :show, :info, :details]
+
+def details
+  @ad = Ad.find(params[:id])
+  @address = Detail.new
+  redirect_to(new_user_session_path) if current_user.nil? => Redirects to login page if there is no current user
+  redirect_to(root_path) if current_user == @ad.user => Redirects to root_path if current_user is same as ad creator
+end
+
+
+Setting booleans for different steps of staging:
+
+1) Create migration column in 'ads table' called "status" in the ad:
+   By default, when an add is created, it is set to "default: 0" which is draft mode.
+
+    class AddPostStatusToAds < ActiveRecord::Migration
+      def change
+        add_column :ads, :status, :integer, default: 0
+      end
+    end
+
+2) Go to models/ad.rb:
+
+  class Ad < ActiveRecord::Base
+    belongs_to :user
+    belongs_to :category
+    validates :user_id, presence: true
+
+    enum status: { draft: 0, published: 1 } => Add this
+    mount_uploader :ad_image, AvatarUploader
+
+    validates_presence_of :title, :price, :description, :ad_image
+    private
+    def avatar_size_validation
+     errors[:ad_image] << "should be less than 1MB" if avatar.size > 1.megabytes
+    end
+  end
+
+
+3) Create form for new.html.erb
+4) Go to controller for new.html.erb:
+
+def create
+  #render plain: params[:article].inspect
+  @ad = Ad.new(ad_params)
+  # @article.user = current_user
+  @ad.user = current_user
+  if @ad.save
+      flash[:notice] = ""
+      redirect_to ad_path(@ad) => After submission, it redirects to "ad_path(@ad)" aka show.html.erb
+  else
+    render :new
+  end
+end
+
+5) Create toggle action in controller:
+
+def toggle_status
+  @ad = Ad.find(params[:id])
+  @ad.published! if @ad.draft? => Changes status to published if in draft
+  flash[:notice] = "Ad was succesfully posted"
+  redirect_to root_path
+end
+
+
+6) Go to show.html.erb:
+
+  <div class="card login-register-edit">
+    <div class="card-body ad">
+      <h1><%= @ad.title %><h1>
+      <h5><%= number_to_currency(@ad.price) %></h5>
+      <br>
+      <h5><%= simple_format @ad.description %></h5>
+      <br>
+
+      <%= image_tag(@ad.ad_image) %>
+      <br><br>
+
+      <!-- <%= @ad.inspect %> -->
+
+      <%= link_to 'Post', toggle_status_ad_path(@ad), class:"btn btn-success", style: "float:right;" %> => button to toggle status from draft to published
+    </div>
+  </div>
+
+
+7) Go controller and change index to only display .published instead of .all:
+
+    def index
+      @ads = Ad.published
+    end
+
+
+Overriding Devise controllers:
+
+1) Type: rails generate devise:controllers users
+
+   Creates all controllers in devise in: controllers/users
+
+2) If you want to override just the registrations controller, go to
+   routes.rb:
+
+   devise_for :users, controllers: { registrations: 'users/registrations }
+
+3) Go to views and create a users/registrations folders:
+
+   Copy and paste files from views/devise/registrations:
+
+   edit.html.erb, new.html.erb
+
+Removing update password from registrations controller:
+
+1) Go to users/registrations_controller.rb:
+
+  def update_resource(resource, params)
+     if params[:password]
+       resource.password = params[:password]
+       resource.password_confirmation = params[:password_confirmation]
+     end
+
+     resource.update_without_password(params)
+   end
+
+2) Delete password text fields from the edit.html.erb file
+
+
+Creating avatar in devise (alternate way):
+
+1) Install gems
+
+gem carrierwave
+gem devise
+gem mini_magick
+gem fog
+
+2) Create a controller with an index page:
+
+  rails g controller Pages index
+
+3) Create route:
+
+   root to: 'pages#index'
+
+
+4) rails generate devise:install
+
+5) ***app/views/layouts/application.html.erb***
+
+<p class="notice"><%= notice %></p>
+<p class="alert"><%= alert %></p>
+
+6) rails generate devise User
+
+7) rake db:migrate
+
+8) rails generate devise:views
+
+9) ***app/views/devise/registrations/new.html.erb***
+
+<h2>Sign up</h2>
+
+<%= form_for(resource, as: resource_name, url: registration_path(resource_name), :html => {multipart: :true}) do |f| %>
+  <%= devise_error_messages! %>
+
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :password %>
+    <% if @minimum_password_length %>
+    <em>(<%= @minimum_password_length %> characters minimum)</em>
+    <% end %><br />
+    <%= f.password_field :password, autocomplete: "off" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :password_confirmation %><br />
+    <%= f.password_field :password_confirmation, autocomplete: "off" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :avatar do %>
+      <%= f.file_field :avatar %>
+      <%= f.hidden_field :avatar_cache %>
+    <% end %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit "Sign up" %>
+  </div>
+<% end %>
+
+<%= render "devise/shared/links" %>
+
+10) app/views/devise/registrations/edit.html.erb
+
+    <h2>Edit <%= resource_name.to_s.humanize %></h2>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, multipart: :true }) do |f| %>
+    <%= devise_error_messages! %>
+
+    <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true %>
+    </div>
+
+    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+    <% end %>
+
+    <div class="field">
+    <%= f.label :password %> <i>(leave blank if you don't want to change it)</i><br />
+    <%= f.password_field :password, autocomplete: "off" %>
+    </div>
+
+    <div class="field">
+    <%= f.label :password_confirmation %><br />
+    <%= f.password_field :password_confirmation, autocomplete: "off" %>
+    </div>
+
+    <% if current_user.avatar.url.present? %>
+    <%= image_tag(current_user.avatar.url) %>
+    <%= f.label :remove_avatar do %>
+      <%= f.check_box :remove_avatar %>
+    <% end %>
+    <% end %>
+    <%= f.file_field :avatar %>
+    <%= f.hidden_field :avatar_cache %>
+
+    <div class="field">
+    <%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i><br />
+    <%= f.password_field :current_password, autocomplete: "off" %>
+    </div>
+
+    <div class="actions">
+    <%= f.submit "Update" %>
+    </div>
+    <% end %>
+
+    <h3>Cancel my account</h3>
+
+    <p>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?" }, method: :delete %></p>
+
+    <%= link_to "Back", :back %>
+
+11)
+
+rails g migration add_avatar_to_users avatar:string
+rake db:migrate
+
+12) ***models/user.rb***
+
+    class User < ActiveRecord::Base
+      mount_uploader :avatar, AvatarUploader
+
+      devise :database_authenticatable, :registerable,
+             :recoverable, :rememberable, :trackable, :validatable
+
+      # User Avatar Validation
+      validates_integrity_of  :avatar
+      validates_processing_of :avatar
+
+      private
+        def avatar_size_validation
+          errors[:avatar] << "should be less than 500KB" if avatar.size > 0.5.megabytes
+        end
+    end
+
+13) app/controllers/application_controller.rb
+
+    class ApplicationController < ActionController::Base
+      # Prevent CSRF attacks by raising an exception.
+      # For APIs, you may want to use :null_session instead.
+      protect_from_forgery with: :exception
+
+      before_action :configure_permitted_parameters, if: :devise_controller?
+
+      protected
+
+      def configure_permitted_parameters
+        devise_parameter_sanitizer.for(:sign_up) { |u| u.permit(:username, :email, :password, :password_confirmation, :remember_me, :avatar, :avatar_cache) }
+        devise_parameter_sanitizer.for(:account_update) { |u| u.permit(:username, :password, :password_confirmation, :current_password, :avatar, :avatar_cache, :remove_avatar) }
+      end
+    end
+
+14) Create ***config/initializers/carrier_wave.rb***
+
+     Type: require 'carrierwave/orm/activerecord'
+
+15) app/uploaders/avatar_uploader.rb
+
+    class AvatarUploader < CarrierWave::Uploader::Base
+
+      include CarrierWave::MiniMagick
+
+      # Choose what kind of storage to use for this uploader:
+      storage :aws => Change from :fog to :aws
+
+      # Override the directory where uploaded files will be stored.
+      # This is a sensible default for uploaders that are meant to be mounted:
+      def store_dir
+        "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+      end
+
+      # Create different versions of your uploaded files:
+      version :thumb do
+        process :resize_to_fill => [100, 100]
+      end
+
+      version :medium do
+        process :resize_to_fill => [300, 300]
+      end
+
+      version :small do
+        process :resize_to_fill => [140, 140]
+      end
+
+      # Add a white list of extensions which are allowed to be uploaded.
+      # For images you might use something like this:
+      def extension_white_list
+        %w(jpg jpeg gif png)
+      end
+    end
 
 
 
